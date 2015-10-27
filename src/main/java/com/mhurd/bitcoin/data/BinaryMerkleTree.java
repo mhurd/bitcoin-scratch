@@ -4,6 +4,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 
 public class BinaryMerkleTree<T extends Comparable<T>> {
 
+    public HashPointer<T> getRoot() {
+        return root;
+    }
+
     public static class HashPointer<T extends Comparable<T>> {
 
         private String hash;
@@ -13,6 +17,18 @@ public class BinaryMerkleTree<T extends Comparable<T>> {
         public HashPointer(T data) {
             this.data = data;
             this.hash = recalculateHash();
+        }
+
+        public HashPointer<T> getLeftChild() {
+            return leftChild;
+        }
+
+        public HashPointer<T> getRightChild() {
+            return rightChild;
+        }
+
+        public String getHash() {
+            return hash;
         }
 
         public void addChild(T data) {
@@ -50,6 +66,9 @@ public class BinaryMerkleTree<T extends Comparable<T>> {
             return b.toString();
         }
 
+        public T getData() {
+            return data;
+        }
     }
 
     private HashPointer<T> root;
