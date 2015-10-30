@@ -2,6 +2,9 @@ package com.mhurd.bitcoin.data;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 public class BinaryMerkleTree<T extends Comparable<T>> {
 
     public HashPointer<T> getRoot() {
@@ -80,6 +83,16 @@ public class BinaryMerkleTree<T extends Comparable<T>> {
         } else {
             root.addChild(data);
         }
+    }
+
+    public boolean verify() {
+        String expectedHash = getRoot().getHash();
+        String currentHash = root.recalculateHash();
+        return expectedHash.equals(currentHash);
+    }
+
+    public void clear() {
+        this.root = null;
     }
 
 }
