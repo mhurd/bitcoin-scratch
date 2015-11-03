@@ -40,7 +40,8 @@ public class BinaryMerkleTree {
         }
 
         public void generateHash() {
-            setHash(DigestUtils.sha256Hex(leftChild.getHash() + rightChild.getHash()));
+            setHash(DigestUtils.sha256Hex((leftChild != null ? leftChild.getHash() : "")
+                                              + (rightChild != null ? rightChild.getHash() : "")));
         }
 
         @Override
@@ -57,13 +58,13 @@ public class BinaryMerkleTree {
     private final HashPointer root;
 
     public BinaryMerkleTree(Queue<String> dataHashes) {
-        int height = log2(dataHashes.size());
+        double height = Math.ceil(Math.log(dataHashes.size())/Math.log(2));
         int currentLevel = 1;
         root = new HashPointer();
         recurse(dataHashes, height, currentLevel, root);
     }
 
-    private void recurse(Queue<String> dataHashes, int height, int currentLevel, HashPointer currentNode) {
+    private void recurse(Queue<String> dataHashes, double height, int currentLevel, HashPointer currentNode) {
         if (currentLevel == height) {
             // at the bottom level start consuming the hashes
             // go left
@@ -71,9 +72,11 @@ public class BinaryMerkleTree {
             leftChild.setHash(dataHashes.remove());
             currentNode.setLeftChild(leftChild);
             // go right
-            HashPointer rightChild = new HashPointer();
-            rightChild.setHash(dataHashes.remove());
-            currentNode.setRightChild(rightChild);
+            if (!dataHashes.isEmpty()) { // may not be an exact log2 match
+                HashPointer rightChild = new HashPointer();
+                rightChild.setHash(dataHashes.remove());
+                currentNode.setRightChild(rightChild);
+            }
         } else {
             // go left
             HashPointer leftChild = new HashPointer();
@@ -85,11 +88,6 @@ public class BinaryMerkleTree {
             recurse(dataHashes, height, currentLevel + 1, rightChild);
         }
         currentNode.generateHash();
-    }
-
-    protected static int log2(int n){
-        if(n <= 0) throw new IllegalArgumentException();
-        return 31 - Integer.numberOfLeadingZeros(n);
     }
 
     @Override

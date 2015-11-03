@@ -74,7 +74,7 @@ public class BinaryMerkleTreeTest {
     @Test
     public void test() {
         BinaryMerkleTree tree = new BinaryMerkleTree(dataHashes);
-        System.out.println(tree);
+        System.out.println("Tree hash: " + tree.getRoot().getHash());
     }
 
 }
