@@ -2,31 +2,32 @@ package com.mhurd.bitcoin.data;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
-import java.util.LinkedList;
 import java.util.Queue;
 
-public class BinaryMerkleTree<T extends Comparable<T>> {
+public class BinaryMerkleTree {
 
-    public HashPointer<T> getRoot() {
+    public HashPointer getRoot() {
         return root;
     }
 
-    public static class HashPointer<T extends Comparable<T>> {
+    public static class HashPointer {
 
-        private String hash;
-        private final T data;
-        private HashPointer<T> leftChild, rightChild;
+        private String hash = "";
+        private HashPointer leftChild, rightChild;
 
-        public HashPointer(T data) {
-            this.data = data;
-            this.hash = recalculateHash();
-        }
-
-        public HashPointer<T> getLeftChild() {
+        public HashPointer getLeftChild() {
             return leftChild;
         }
 
-        public HashPointer<T> getRightChild() {
+        public void setLeftChild(HashPointer leftChild) {
+            this.leftChild = leftChild;
+        }
+
+        public void setRightChild(HashPointer rightChild) {
+            this.rightChild = rightChild;
+        }
+
+        public HashPointer getRightChild() {
             return rightChild;
         }
 
@@ -34,65 +35,68 @@ public class BinaryMerkleTree<T extends Comparable<T>> {
             return hash;
         }
 
-        public void addChild(T data) {
-            assert data != null;
-            if (this.data.compareTo(data) > 0) {
-                if (leftChild == null) {
-                    leftChild = new HashPointer<T>(data);
-                } else {
-                    leftChild.addChild(data);
-                }
-            } else {
-                if (rightChild == null) {
-                    rightChild = new HashPointer<T>(data);
-                } else {
-                    rightChild.addChild(data);
-                }
-            }
-           this.hash = recalculateHash();
+        public void setHash(String hash) {
+            this.hash = hash;
         }
 
-        private String recalculateHash() {
-            return DigestUtils.sha256Hex(toString());
+        public void generateHash() {
+            setHash(DigestUtils.sha256Hex(leftChild.getHash() + rightChild.getHash()));
         }
 
         @Override
         public String toString() {
-            StringBuilder b = new StringBuilder();
-            b.append(data);
-            if (leftChild != null) {
-                b.append(leftChild.hash);
-            }
-            if (rightChild != null) {
-                b.append(rightChild.hash);
-            }
-            return b.toString();
+            return "HashPointer{" +
+                "hash='" + hash + '\'' +
+                ", leftChild=" + leftChild +
+                ", rightChild=" + rightChild +
+                '}';
         }
 
-        public T getData() {
-            return data;
-        }
     }
 
-    private HashPointer<T> root;
+    private final HashPointer root;
 
-    public void addChild(T data) {
-        assert data != null;
-        if (root == null) {
-            root = new HashPointer<T>(data);
+    public BinaryMerkleTree(Queue<String> dataHashes) {
+        int height = log2(dataHashes.size());
+        int currentLevel = 1;
+        root = new HashPointer();
+        recurse(dataHashes, height, currentLevel, root);
+    }
+
+    private void recurse(Queue<String> dataHashes, int height, int currentLevel, HashPointer currentNode) {
+        if (currentLevel == height) {
+            // at the bottom level start consuming the hashes
+            // go left
+            HashPointer leftChild = new HashPointer();
+            leftChild.setHash(dataHashes.remove());
+            currentNode.setLeftChild(leftChild);
+            // go right
+            HashPointer rightChild = new HashPointer();
+            rightChild.setHash(dataHashes.remove());
+            currentNode.setRightChild(rightChild);
         } else {
-            root.addChild(data);
+            // go left
+            HashPointer leftChild = new HashPointer();
+            currentNode.setLeftChild(leftChild);
+            recurse(dataHashes, height, currentLevel + 1, leftChild);
+            // go right
+            HashPointer rightChild = new HashPointer();
+            currentNode.setRightChild(rightChild);
+            recurse(dataHashes, height, currentLevel + 1, rightChild);
         }
+        currentNode.generateHash();
     }
 
-    public boolean verify() {
-        String expectedHash = getRoot().getHash();
-        String currentHash = root.recalculateHash();
-        return expectedHash.equals(currentHash);
+    protected static int log2(int n){
+        if(n <= 0) throw new IllegalArgumentException();
+        return 31 - Integer.numberOfLeadingZeros(n);
     }
 
-    public void clear() {
-        this.root = null;
+    @Override
+    public String toString() {
+        return "BinaryMerkleTree{" +
+            "root=" + root +
+            '}';
     }
 
 }
